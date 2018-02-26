@@ -36,3 +36,26 @@ def splitDataSet(dataSet, axis, value):
 			retDataSet.append(reducedFeatVec)
 	return retDataSet
 
+def chooseBestFeatureToSplit(dataSet):
+	numFeatures = len(dataSet[0]) - 1
+	baseEntropy = calcShannonEnt(dataSet)
+	bestInfoGain = 0.0
+	bestFeature = -1
+	#遍历所有特征
+	for i in range(numFeatures):
+		featList = [example[i] for example in dataSet]
+		uniqueVals = set(featList) #使用集合，避免重复元素
+		newEntropy = 0.0
+		for value in uniqueVals:
+			subDataSet = splitDataSet(dataSet, i, value)
+			prob = len(subDataSet)/float(len(dataSet))
+			newEntropy = prob * calcShannonEnt(subDataSet)
+		infoGain = baseEntropy - newEntropy
+		#计算最好的信息增益
+		if infoGain > bestInfoGain:
+			bestInfoGain = infoGain
+			bestFeature = i
+	return bestFeature
+
+
+
