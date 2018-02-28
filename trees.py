@@ -1,4 +1,5 @@
 from math import log
+import operator
 
 #计算数据集的香农熵
 def calcShannonEnt(dataSet):
@@ -56,6 +57,60 @@ def chooseBestFeatureToSplit(dataSet):
 			bestInfoGain = infoGain
 			bestFeature = i
 	return bestFeature
+
+#返回出现次数最多的类别，用于遍历完所有特征时，类标签任不唯一，采用多数表决的方法
+def majorityCnt(classList):
+	classCount = {}
+	for vote in classList:
+		if vote not in classCount.keys():
+			classCount[vote] = 0
+		classCount[vote] += 1
+	sortedClassCount = sorted(classCount.items(), key=operator.itemgetter(1), reverse=True)
+	return sortedClassCount[0][0]
+
+def createTree(dataSet, labels):
+	classList = [example[-1] for example in dataSet]
+	#递归的第一种结束情况：类标签已全部相同
+	if classList.count(classList[0]) == len(classList):
+		return classList[0]
+	#递归的第二种结束情况：所有特征都已经遍历过
+	if len(dataSet[0]) == 1:
+		return majorityCnt(classList)
+
+	bestFeat = chooseBestFeatureToSplit(dataSet)
+	bestFeatLabel = labels[bestFeat]
+	myTree ={bestFeatLabel:{}}
+	del(labels[bestFeat])
+	featValues = [example[bestFeat] for example in dataSet]
+	uniqueVals = set(featValues)
+	for value in uniqueVals:
+		subLabels = labels[:]
+		myTree[bestFeatLabel][value] = createTree(splitDataSet(dataSet, bestFeat, value), subLabels)
+	return myTree
+
+def classify(inputTree, featLabels, testVec):
+	firstStr = list(inputTree.keys())[0]
+	secondDict = inputTree[firstStr]
+	featIndex = featLabels.index(firstStr)
+	for key in secondDict.keys():
+		if testVec[featIndex] == key:
+			if type(secondDict[key]).__name__=='dict':
+				classLabel = classify(secondDict[key], featLabels, testVec)
+			else:
+				classLabel = secondDict[key]
+	return classLabel
+
+def storeTree(inputTree, filename):
+	import pickle
+	fw = open(filename, 'wb+')
+	pickle.dump(inputTree, fw)
+	fw.close()
+
+def grabTree(filename):
+	import pickle
+	fr = open(filename, 'rb')
+	return pickle.load(fr)
+
 
 
 
